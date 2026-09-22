@@ -16,5 +16,6 @@ Gem::Specification.new do |spec|
   spec.require_paths = ["lib"]
 
   spec.add_development_dependency "rspec", "~> 3.12"
+  spec.add_development_dependency "webrick", "~> 1.8"
   spec.metadata["rubygems_mfa_required"] = "true"
 end
