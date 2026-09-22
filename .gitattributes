@@ -1,0 +1,16 @@
+# Normalise line endings to LF across platforms.
+* text=auto eol=lf
+
+*.go   text eol=lf
+*.sh   text eol=lf
+*.rb   text eol=lf
+*.ts   text eol=lf
+*.js   text eol=lf
+*.json text eol=lf
+*.yml  text eol=lf
+*.yaml text eol=lf
+*.md   text eol=lf
+
+# Binary assets (none yet, but future-proof).
+*.png  binary
+*.jpg  binary

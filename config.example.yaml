@@ -1,0 +1,86 @@
+# Sluice configuration. Copy to config.yaml and edit.
+# ${VAR} references are expanded from the environment at load time, so secrets
+# never live in the file. Every field has a sensible default (see internal/config).
+
+server:
+  addr: ":8080"
+  read_timeout: 30s
+  write_timeout: 120s
+  shutdown_timeout: 15s
+
+logging:
+  level: info      # debug | info | warn | error
+  format: json     # json | text
+
+# API-key auth. Omit `keys` entirely to run open (anonymous) for local demos.
+auth:
+  keys:
+    - secret: ${SLUICE_API_KEY}
+      owner: default
+
+# Semantic response cache: embeds each prompt and reuses a prior response when
+# cosine similarity >= threshold for the same model.
+cache:
+  enabled: true
+  threshold: 0.95  # 0..1; higher = stricter (fewer, safer hits)
+  dim: 256
+  shards: 16
+  ttl: 1h
+  index: hnsw      # hnsw (approximate, scalable) | flat (exact, small sets)
+
+# Routing across backends with retries and a circuit breaker.
+router:
+  strategy: latency   # round-robin | weighted | latency | cost
+  retry:
+    max_attempts: 3
+    base_delay: 50ms
+    max_delay: 2s
+  breaker:
+    failure_threshold: 5
+    cooldown: 10s
+
+rate_limit:
+  enabled: true
+  rps: 20
+  burst: 40
+  per_model: false
+
+budget:
+  enabled: false
+  max_cost_usd: 100    # per window, per key; 0 = unlimited
+  max_tokens: 0
+  window: daily        # daily | monthly
+
+# Providers are tried in health/strategy order with automatic failover.
+providers:
+  # The mock provider needs no API key and makes the whole gateway runnable
+  # offline. Remove it in production.
+  - name: mock
+    type: mock
+    models: [mock-1, gpt-4o-mini]
+    latency: 20ms
+    weight: 1
+    cost_per_1k:
+      mock-1: 0.0
+      gpt-4o-mini: 0.0006
+
+  # Real OpenAI-compatible upstream (OpenAI, Azure, groq, together, vLLM, ...).
+  - name: openai
+    type: openai
+    base_url: https://api.openai.com/v1
+    api_key: ${OPENAI_API_KEY}
+    models: [gpt-4o, gpt-4o-mini]
+    weight: 5
+    cost_per_1k:
+      gpt-4o: 0.005
+      gpt-4o-mini: 0.0006
+
+  # Anthropic Messages API, adapted to the OpenAI-compatible surface.
+  - name: anthropic
+    type: anthropic
+    api_key: ${ANTHROPIC_API_KEY}
+    models: [claude-sonnet-4-5, claude-haiku-4-5]
+    weight: 5
+    cost_per_1k:
+      claude-sonnet-4-5: 0.003
+      claude-haiku-4-5: 0.0008

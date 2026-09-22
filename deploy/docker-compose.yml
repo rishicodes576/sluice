@@ -1,0 +1,50 @@
+# Full local stack: the gateway plus Prometheus, Grafana and Jaeger.
+# `docker compose up` gives you a working gateway with dashboards, no API keys
+# required (the default config ships a mock provider).
+services:
+  sluice:
+    build:
+      context: ..
+      dockerfile: deploy/docker/Dockerfile
+      args:
+        VERSION: local
+    ports:
+      - "8080:8080"
+    environment:
+      SLUICE_LOG_FORMAT: json
+      # Provide real keys to enable the openai/anthropic providers:
+      # OPENAI_API_KEY: ${OPENAI_API_KEY}
+      # ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+    healthcheck:
+      test: ["CMD", "/usr/local/bin/sluice", "version"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+    depends_on:
+      - sluice
+
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      GF_AUTH_ANONYMOUS_ENABLED: "true"
+      GF_AUTH_ANONYMOUS_ORG_ROLE: Admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+    volumes:
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./grafana/dashboards:/var/lib/grafana/dashboards:ro
+    depends_on:
+      - prometheus
+
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"

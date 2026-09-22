@@ -1,0 +1,28 @@
+# Go
+/bin/
+*.exe
+*.test
+*.out
+coverage.*
+
+# Node / TS SDK
+node_modules/
+sdk/typescript/dist/
+
+# Ruby SDK
+sdk/ruby/vendor/
+sdk/ruby/.bundle/
+sdk/ruby/Gemfile.lock
+
+# Local config & secrets
+config.yaml
+*.local.yaml
+.env
+
+# Editor / OS
+.idea/
+.vscode/
+.DS_Store
+
+# Local toolchains / scratch
+.gotmp/
